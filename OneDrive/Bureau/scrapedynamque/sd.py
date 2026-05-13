@@ -1,27 +1,41 @@
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
-from webdriver_manager.chrome import ChromeDriverManager
-import time
+from selenium.webdriver.common.by import By
+import pandas as pd
 
-service = Service(ChromeDriverManager().install())
+options = webdriver.ChromeOptions()
 
-from selenium.webdriver.chrome.options import Options
+options.add_argument(r"--user-data-dir=C:\Users\rhahl\OneDrive\Bureau\selenium_profile")
+options.add_argument("--profile-directory=Default")
+options.add_argument("--start-maximized")
 
-options = Options()
-options.add_argument("--disable-blink-features=AutomationControlled")
-options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+driver = webdriver.Chrome(options=options)
 
-driver = webdriver.Chrome(service=service, options=options)
+driver.get("https://www.producthunt.com/search?q=mental+health+ai")
 
-url = "https://www.producthunt.com/search?q=mental+health+ai"
+input("Finish the security check manually, then press Enter...")
 
-driver.get(url)
+products = driver.find_elements(
+    By.CSS_SELECTOR,
+    "button[data-test^='spotlight-result-product-']"
+)
 
-time.sleep(20)
+data = []
 
-page_source = driver.page_source
+for product in products:
+    try:
+        title = product.find_element(By.CSS_SELECTOR, "span.text-base").text
+        desc = product.find_element(By.CSS_SELECTOR, "span.text-sm").text
 
-with open("source_producthunt.html", "w", encoding="utf-8") as fichier:
-    fichier.write(page_source)
+        data.append({
+            "Title": title,
+            "Description": desc
+        })
+    except:
+        pass
 
 driver.quit()
+
+df = pd.DataFrame(data)
+df.to_csv("products.csv", index=False, encoding="utf-8")
+
+print(df)
